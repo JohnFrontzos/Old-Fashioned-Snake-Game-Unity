@@ -11,4 +11,7 @@ public class GameAssets : MonoBehaviour
     }
 
     public Sprite snakeHeadSprite;
+    public Sprite foodSprite;
+    public GameObject foodToGrow;
+    public GameObject foodToPoison;
 }
