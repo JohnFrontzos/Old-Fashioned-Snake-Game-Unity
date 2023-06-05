@@ -11,10 +11,19 @@ public class Snake : MonoBehaviour
     private Vector2Int lastMoveDirection;
     public int gridMovementStep = 1;
     private LevelGrid level;
+    bool isOutOfCamera = false;
 
 
-    public void Setup(LevelGrid levelGrid) {
+    public void Setup(LevelGrid levelGrid)
+    {
         this.level = levelGrid;
+    }
+
+    public void OnBecameInvisible()
+    {
+        Debug.Log("Snake is out of camera");
+        isOutOfCamera = true;
+        //HandleSnakeMovement(true);
     }
 
     private void Awake()
@@ -34,7 +43,8 @@ public class Snake : MonoBehaviour
     private void OnTriggerEnter2D(Collider2D collision)
     {
         Debug.Log("Snake hit something");
-        if (collision.CompareTag("GrowFood")) {
+        if (collision.CompareTag("GrowFood"))
+        {
             level.RemoveAndRespawnFood();
         }
     }
@@ -44,16 +54,34 @@ public class Snake : MonoBehaviour
         gridMoveTimer += Time.deltaTime;
         if (gridMoveTimer >= gridMoveTimerStep)
         {
-            gridPosition += lastMoveDirection;
-            gridMoveTimer -= gridMoveTimerStep;
+            Debug.Log("Last move direction xy" + lastMoveDirection.x + lastMoveDirection.y);
+            if (isOutOfCamera)
+            {
+                if (Mathf.Abs(gridPosition.x) > Mathf.Abs(gridPosition.y))
+                {
+                    gridPosition = new Vector2Int(gridPosition.x * -1, gridPosition.y);
+                }
+                else
+                {
+                    gridPosition = new Vector2Int(gridPosition.x, gridPosition.y*-1);
+                }
+                isOutOfCamera = false;
+            }
+            else
+            {
+                gridPosition += lastMoveDirection;
+                gridMoveTimer -= gridMoveTimerStep;
+            }
+            Debug.Log("New grip position xy" + gridPosition.x + gridPosition.y);
             transform.position = new Vector3(gridPosition.x, gridPosition.y);
             transform.eulerAngles = new Vector3(0, 0, GetAngleFromVector(lastMoveDirection) - 90);
         }
     }
 
-    private void HandleUserInput() {
-    // TODO maybe use the InputSystem
-    if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
+    private void HandleUserInput()
+    {
+        // TODO maybe use the InputSystem
+        if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
         {
             if (lastMoveDirection.y != -gridMovementStep)
             {
@@ -88,7 +116,8 @@ public class Snake : MonoBehaviour
         }
     }
 
-    private float GetAngleFromVector(Vector2Int dir) {
+    private float GetAngleFromVector(Vector2Int dir)
+    {
         float n = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (n < 0) n += 360;
         return n;
