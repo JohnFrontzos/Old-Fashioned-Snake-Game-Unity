@@ -2,6 +2,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class Snake : MonoBehaviour
 {
@@ -12,18 +13,20 @@ public class Snake : MonoBehaviour
     public int gridMovementStep = 1;
     private LevelGrid level;
     bool isOutOfCamera = false;
+    private int snakeBodySize = 1;
+    private List<Vector2Int> snakeMovePositionList = new();
+    private GameHandler gameHandler;
 
-
-    public void Setup(LevelGrid levelGrid)
+    public void Setup(LevelGrid levelGrid, GameHandler gameHandler)
     {
         this.level = levelGrid;
+        this.gameHandler = gameHandler;
     }
 
     public void OnBecameInvisible()
     {
-        Debug.Log("Snake is out of camera");
+        Debug.Log("Where are you going?");
         isOutOfCamera = true;
-        //HandleSnakeMovement(true);
     }
 
     private void Awake()
@@ -45,7 +48,14 @@ public class Snake : MonoBehaviour
         Debug.Log("Snake hit something");
         if (collision.CompareTag("GrowFood"))
         {
+            Debug.Log("It's food!");
+            snakeBodySize++;
             level.RemoveAndRespawnFood();
+        }
+        else if (collision.CompareTag("Snake"))
+        {
+            Debug.Log("Its self!");
+            gameHandler.RestartGame();
         }
     }
 
@@ -54,7 +64,7 @@ public class Snake : MonoBehaviour
         gridMoveTimer += Time.deltaTime;
         if (gridMoveTimer >= gridMoveTimerStep)
         {
-            Debug.Log("Last move direction xy" + lastMoveDirection.x + lastMoveDirection.y);
+            snakeMovePositionList.Insert(0, gridPosition);
             if (isOutOfCamera)
             {
                 if (Mathf.Abs(gridPosition.x) > Mathf.Abs(gridPosition.y))
@@ -63,7 +73,7 @@ public class Snake : MonoBehaviour
                 }
                 else
                 {
-                    gridPosition = new Vector2Int(gridPosition.x, gridPosition.y*-1);
+                    gridPosition = new Vector2Int(gridPosition.x, gridPosition.y * -1);
                 }
                 isOutOfCamera = false;
             }
@@ -72,14 +82,31 @@ public class Snake : MonoBehaviour
                 gridPosition += lastMoveDirection;
                 gridMoveTimer -= gridMoveTimerStep;
             }
-            Debug.Log("New grip position xy" + gridPosition.x + gridPosition.y);
+            if (snakeMovePositionList.Count >= snakeBodySize + 1)
+            {
+                snakeMovePositionList.RemoveAt(snakeMovePositionList.Count - 1);
+            }
+
+            DrawSnakeBody();
             transform.position = new Vector3(gridPosition.x, gridPosition.y);
             transform.eulerAngles = new Vector3(0, 0, GetAngleFromVector(lastMoveDirection) - 90);
         }
     }
 
+    private void DrawSnakeBody()
+    {
+        for (int i = 0; i < snakeMovePositionList.Count; i++)
+        {
+            GameObject snakeBody = Object.Instantiate(GameAssets.instance.snakeBody);
+            snakeBody.transform.position = new Vector3(snakeMovePositionList[i].x, snakeMovePositionList[i].y);
+            snakeBody.transform.eulerAngles = new Vector3(0, 0, GetAngleFromVector(lastMoveDirection) - 90);
+            Object.Destroy(snakeBody, gridMoveTimerStep);
+        }
+    }
+
     private void HandleUserInput()
     {
+
         // TODO maybe use the InputSystem
         if (Input.GetKeyDown(KeyCode.UpArrow) || Input.GetKeyDown(KeyCode.W))
         {
@@ -123,5 +150,12 @@ public class Snake : MonoBehaviour
         return n;
     }
 
+    public Vector2Int GetGridPosition() { return gridPosition; }
 
+    public List<Vector2Int> GetSnakePosition()
+    {
+        List<Vector2Int> snakeTotalPosition = new();
+        snakeTotalPosition.Add(gridPosition);
+        return snakeMovePositionList;
+    }
 }
