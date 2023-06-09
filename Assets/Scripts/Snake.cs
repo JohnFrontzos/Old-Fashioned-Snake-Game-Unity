@@ -8,7 +8,7 @@ public class Snake : MonoBehaviour
 {
     private Vector2Int gridPosition;
     private float gridMoveTimer;
-    private float gridMoveTimerStep;
+    private float gridMoveTimerStep = 0.25f;
     private Vector2Int lastMoveDirection;
     public int gridMovementStep = 1;
     private LevelGrid level;
@@ -32,7 +32,6 @@ public class Snake : MonoBehaviour
     private void Awake()
     {
         gridPosition = new Vector2Int(10, 10);
-        gridMoveTimerStep = 0.5f;
         gridMoveTimer = gridMoveTimerStep;
         lastMoveDirection = new Vector2Int(0, 1);
     }
@@ -51,6 +50,13 @@ public class Snake : MonoBehaviour
             Debug.Log("It's food!");
             snakeBodySize++;
             level.RemoveAndRespawnFood();
+            gameHandler.addScore();
+        }
+        else if (collision.CompareTag("Poison"))
+        {
+            Debug.Log("It's poison!");
+            level.RemoveAndRespawnFood(true);
+            gameHandler.minusScore();
         }
         else if (collision.CompareTag("Snake"))
         {
